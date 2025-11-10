@@ -72,7 +72,7 @@ Press `Ctrl + C` in the terminal where the server is running.
 stat-calculator/
 ├── app.py                 # Flask application & API endpoints
 ├── templates/
-│   └── index.html        # Main HTML page
+│   └── index.html        #HTML page
 ├── static/
 │   ├── style.css         # CSS styling
 │   └── script.js         # JavaScript functionality
