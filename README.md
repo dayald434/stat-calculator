@@ -28,17 +28,7 @@ venv\Scripts\activate
 # You should see (venv) in your terminal
 ```
 
-
-### Step 3: Install Dependencies
-```bash
-# Upgrade pip
-pip install --upgrade pip
-
-# Install required packages
-pip install -r requirements.txt
-```
-
-### Step 4: Verify Installation
+### Step 3: Verify Installation
 ```bash
 # Check Flask installation
 python -c "import flask; print('Flask version:', flask.__version__)"
