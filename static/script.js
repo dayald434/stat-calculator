@@ -154,17 +154,25 @@ async function calculateTTest() {
                     <div class="stat-label">Standard Error</div>
                     <div class="stat-value">${result.standardError}</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card highlight">
                     <div class="stat-label">T-Statistic</div>
                     <div class="stat-value">${result.tStatistic}</div>
+                </div>
+                <div class="stat-card highlight">
+                    <div class="stat-label">P-Value</div>
+                    <div class="stat-value">${result.pValue}</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Degrees of Freedom</div>
                     <div class="stat-value">${result.degreesOfFreedom}</div>
                 </div>
+                <div class="stat-card ${result.significance === 'Significant' ? 'significant' : 'not-significant'}">
+                    <div class="stat-label">Result</div>
+                    <div class="stat-value">${result.significance}</div>
+                </div>
             </div>
             <div class="note">
-                <strong>📝 Note:</strong> ${result.note}
+                <strong>📝 Interpretation:</strong> ${result.interpretation}
             </div>
         `;
         
@@ -202,9 +210,13 @@ async function calculateChiSquare() {
         const html = `
             <h3>📊 Chi-Square Test Results</h3>
             <div class="stats-grid">
-                <div class="stat-card">
+                <div class="stat-card highlight">
                     <div class="stat-label">Chi-Square Statistic</div>
                     <div class="stat-value">${result.chiSquareStatistic}</div>
+                </div>
+                <div class="stat-card highlight">
+                    <div class="stat-label">P-Value</div>
+                    <div class="stat-value">${result.pValue}</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Degrees of Freedom</div>
@@ -214,9 +226,21 @@ async function calculateChiSquare() {
                     <div class="stat-label">Categories</div>
                     <div class="stat-value">${result.categories}</div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-label">Observed Sum</div>
+                    <div class="stat-value">${result.observedSum}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Expected Sum</div>
+                    <div class="stat-value">${result.expectedSum}</div>
+                </div>
+                <div class="stat-card ${result.significance === 'Significant' ? 'significant' : 'not-significant'}">
+                    <div class="stat-label">Result</div>
+                    <div class="stat-value">${result.significance}</div>
+                </div>
             </div>
             <div class="note">
-                <strong>📝 Note:</strong> ${result.note}
+                <strong>📝 Interpretation:</strong> ${result.interpretation}
             </div>
         `;
         
@@ -231,7 +255,7 @@ async function calculateCorrelation() {
     const input = document.getElementById('correlation-input').value;
     
     if (!input.trim()) {
-displayResult('correlation-result', 'Please enter X and Y values', true);
+        displayResult('correlation-result', 'Please enter X and Y values', true);
         return;
     }
     
@@ -258,9 +282,13 @@ displayResult('correlation-result', 'Please enter X and Y values', true);
                     <div class="stat-label">Sample Size (n)</div>
                     <div class="stat-value">${result.n}</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card highlight">
                     <div class="stat-label">Correlation Coefficient (r)</div>
                     <div class="stat-value">${result.correlationCoefficient}</div>
+                </div>
+                <div class="stat-card highlight">
+                    <div class="stat-label">P-Value</div>
+                    <div class="stat-value">${result.pValue}</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">R-Squared (r²)</div>
@@ -273,6 +301,10 @@ displayResult('correlation-result', 'Please enter X and Y values', true);
                 <div class="stat-card">
                     <div class="stat-label">Mean Y</div>
                     <div class="stat-value">${result.meanY}</div>
+                </div>
+                <div class="stat-card ${result.significance === 'Significant' ? 'significant' : 'not-significant'}">
+                    <div class="stat-label">Result</div>
+                    <div class="stat-value">${result.significance}</div>
                 </div>
             </div>
             <div class="note">

@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import math
 import statistics
+from scipy import stats
 
 app = Flask(__name__)
 CORS(app)
@@ -67,30 +68,42 @@ def descriptive_stats():
 def t_test():
     try:
         data = request.json.get('data', '')
-        lines = data.strip().split('\n')
+        
+        # Split by newlines and filter empty lines
+        lines = [line.strip() for line in data.strip().split('\n') if line.strip()]
         
         if len(lines) < 2:
-            return jsonify({'error': 'Enter sample data (line 1) and population mean (line 2)'}), 400
+            return jsonify({'error': 'Enter sample data (line 1) and population mean (line 2). Make sure to press Enter between lines.'}), 400
         
         # Parse sample data
-        sample = [float(x.strip()) for x in lines[0].split(',') if x.strip()]
-        population_mean = float(lines[1].strip())
+        try:
+            sample = [float(x.strip()) for x in lines[0].split(',') if x.strip()]
+        except ValueError as e:
+            return jsonify({'error': f'Invalid sample data format: {str(e)}'}), 400
+        
+        # Parse population mean
+        try:
+            population_mean = float(lines[1].strip())
+        except ValueError:
+            return jsonify({'error': 'Population mean must be a single number'}), 400
         
         if not sample:
-            return jsonify({'error': 'Invalid sample data'}), 400
+            return jsonify({'error': 'Sample data cannot be empty'}), 400
         
-        # Calculate t-test
+        if len(sample) < 2:
+            return jsonify({'error': 'Need at least 2 data points for t-test'}), 400
+        
+        # Calculate t-test using scipy
+        t_statistic, p_value = stats.ttest_1samp(sample, population_mean)
+        
         n = len(sample)
         sample_mean = statistics.mean(sample)
-        
-        if n > 1:
-            sample_std = statistics.stdev(sample)
-            std_error = sample_std / math.sqrt(n)
-            t_statistic = (sample_mean - population_mean) / std_error
-        else:
-            return jsonify({'error': 'Need at least 2 data points'}), 400
-        
+        sample_std = statistics.stdev(sample)
+        std_error = sample_std / math.sqrt(n)
         df = n - 1
+        
+        # Determine significance
+        significance = "Significant" if p_value < 0.05 else "Not Significant"
         
         result = {
             'sampleSize': n,
@@ -99,110 +112,172 @@ def t_test():
             'sampleStdDev': round(sample_std, 4),
             'standardError': round(std_error, 4),
             'tStatistic': round(t_statistic, 4),
+            'pValue': round(p_value, 6),
             'degreesOfFreedom': df,
-            'note': '|t| > 2.0 suggests significance at α=0.05 for most cases'
+            'significance': significance,
+            'interpretation': f'At α=0.05: {significance} (p={round(p_value, 4)})'
         }
         
         return jsonify(result)
     
-    except ValueError:
-        return jsonify({'error': 'Invalid input format'}), 400
+    except ValueError as e:
+        return jsonify({'error': f'Invalid input format: {str(e)}'}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
 
 @app.route('/api/chi-square', methods=['POST'])
 def chi_square():
     try:
         data = request.json.get('data', '')
-        lines = data.strip().split('\n')
+        
+        # Debug: Print received data
+        print(f"Received data: {repr(data)}")
+        
+        # Split by newlines and filter empty lines
+        lines = [line.strip() for line in data.strip().split('\n') if line.strip()]
+        
+        print(f"Number of lines: {len(lines)}")
+        print(f"Lines: {lines}")
         
         if len(lines) < 2:
-            return jsonify({'error': 'Enter observed (line 1) and expected (line 2) frequencies'}), 400
+            return jsonify({'error': 'Enter observed (line 1) and expected (line 2) frequencies. Make sure to press Enter between lines.'}), 400
         
-        observed = [float(x.strip()) for x in lines[0].split(',') if x.strip()]
-        expected = [float(x.strip()) for x in lines[1].split(',') if x.strip()]
+        # Parse observed frequencies
+        try:
+            observed = [float(x.strip()) for x in lines[0].split(',') if x.strip()]
+        except (ValueError, IndexError) as e:
+            return jsonify({'error': f'Invalid observed frequencies format: {str(e)}'}), 400
+        
+        # Parse expected frequencies
+        try:
+            expected = [float(x.strip()) for x in lines[1].split(',') if x.strip()]
+        except (ValueError, IndexError) as e:
+            return jsonify({'error': f'Invalid expected frequencies format: {str(e)}'}), 400
+        
+        print(f"Observed: {observed}")
+        print(f"Expected: {expected}")
+        
+        if not observed:
+            return jsonify({'error': 'Observed frequencies cannot be empty'}), 400
+        
+        if not expected:
+            return jsonify({'error': 'Expected frequencies cannot be empty'}), 400
         
         if len(observed) != len(expected):
-            return jsonify({'error': 'Observed and expected must have same length'}), 400
+            return jsonify({'error': f'Observed ({len(observed)}) and expected ({len(expected)}) must have same length'}), 400
         
-        if not observed or not expected:
-            return jsonify({'error': 'Invalid frequency data'}), 400
+        if any(e <= 0 for e in expected):
+            return jsonify({'error': 'Expected frequencies must be positive values'}), 400
         
-        # Calculate chi-square
+        # Check if sums are approximately equal
+        sum_obs = sum(observed)
+        sum_exp = sum(expected)
+        print(f"Sum observed: {sum_obs}, Sum expected: {sum_exp}")
+        
+        # If sums don't match, normalize expected frequencies
+        if abs(sum_obs - sum_exp) > 1e-6:
+            print(f"Sums don't match. Normalizing expected frequencies...")
+            # Normalize expected to match observed sum
+            expected = [(e * sum_obs / sum_exp) for e in expected]
+            print(f"Normalized expected: {expected}")
+        
+        # Calculate chi-square manually for better control
         chi_square_stat = sum((o - e) ** 2 / e for o, e in zip(observed, expected))
         df = len(observed) - 1
         
+        # Calculate p-value using chi-square distribution
+        p_value = 1 - stats.chi2.cdf(chi_square_stat, df)
+        
+        # Determine significance
+        significance = "Significant" if p_value < 0.05 else "Not Significant"
+        
         result = {
             'chiSquareStatistic': round(chi_square_stat, 4),
+            'pValue': round(p_value, 6),
             'degreesOfFreedom': df,
             'categories': len(observed),
-            'note': 'χ² > 3.84 suggests significance at α=0.05 for df=1, χ² > 5.99 for df=2'
+            'significance': significance,
+            'observedSum': round(sum_obs, 2),
+            'expectedSum': round(sum(expected), 2),
+            'interpretation': f'At α=0.05: {significance} (p={round(p_value, 4)})'
         }
         
         return jsonify(result)
     
-    except ValueError:
-        return jsonify({'error': 'Invalid input format'}), 400
+    except ValueError as e:
+        return jsonify({'error': f'Invalid input format: {str(e)}'}), 400
     except ZeroDivisionError:
         return jsonify({'error': 'Expected frequencies cannot be zero'}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
 
 @app.route('/api/correlation', methods=['POST'])
 def correlation():
     try:
         data = request.json.get('data', '')
-        lines = data.strip().split('\n')
+        
+        # Split by newlines and filter empty lines
+        lines = [line.strip() for line in data.strip().split('\n') if line.strip()]
         
         if len(lines) < 2:
-            return jsonify({'error': 'Enter X values (line 1) and Y values (line 2)'}), 400
+            return jsonify({'error': 'Enter X values (line 1) and Y values (line 2). Make sure to press Enter between lines.'}), 400
         
-        x_values = [float(x.strip()) for x in lines[0].split(',') if x.strip()]
-        y_values = [float(y.strip()) for y in lines[1].split(',') if y.strip()]
+        # Parse X values
+        try:
+            x_values = [float(x.strip()) for x in lines[0].split(',') if x.strip()]
+        except ValueError as e:
+            return jsonify({'error': f'Invalid X values format: {str(e)}'}), 400
+        
+        # Parse Y values
+        try:
+            y_values = [float(y.strip()) for y in lines[1].split(',') if y.strip()]
+        except ValueError as e:
+            return jsonify({'error': f'Invalid Y values format: {str(e)}'}), 400
+        
+        if not x_values:
+            return jsonify({'error': 'X values cannot be empty'}), 400
+        
+        if not y_values:
+            return jsonify({'error': 'Y values cannot be empty'}), 400
         
         if len(x_values) != len(y_values):
-            return jsonify({'error': 'X and Y must have same length'}), 400
+            return jsonify({'error': f'X ({len(x_values)}) and Y ({len(y_values)}) must have same length'}), 400
         
         if len(x_values) < 2:
-            return jsonify({'error': 'Need at least 2 data points'}), 400
+            return jsonify({'error': 'Need at least 2 data points for correlation'}), 400
         
-        # Calculate correlation coefficient
-        n = len(x_values)
-        mean_x = statistics.mean(x_values)
-        mean_y = statistics.mean(y_values)
-        
-        # Pearson correlation coefficient
-        numerator = sum((x - mean_x) * (y - mean_y) for x, y in zip(x_values, y_values))
-        denominator = math.sqrt(
-            sum((x - mean_x) ** 2 for x in x_values) * 
-            sum((y - mean_y) ** 2 for y in y_values)
-        )
-        
-        if denominator == 0:
-            correlation_coef = 0
-        else:
-            correlation_coef = numerator / denominator
+        # Calculate Pearson correlation using scipy
+        correlation_coef, p_value = stats.pearsonr(x_values, y_values)
         
         # Coefficient of determination
         r_squared = correlation_coef ** 2
         
+        n = len(x_values)
+        mean_x = statistics.mean(x_values)
+        mean_y = statistics.mean(y_values)
+        
+        # Determine significance
+        significance = "Significant" if p_value < 0.05 else "Not Significant"
+        
         result = {
             'n': n,
             'correlationCoefficient': round(correlation_coef, 4),
+            'pValue': round(p_value, 6),
             'rSquared': round(r_squared, 4),
             'meanX': round(mean_x, 4),
             'meanY': round(mean_y, 4),
-            'interpretation': get_correlation_interpretation(correlation_coef)
+            'significance': significance,
+            'interpretation': get_correlation_interpretation(correlation_coef, p_value)
         }
         
         return jsonify(result)
     
-    except ValueError:
-        return jsonify({'error': 'Invalid input format'}), 400
+    except ValueError as e:
+        return jsonify({'error': f'Invalid input format: {str(e)}'}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
 
-def get_correlation_interpretation(r):
+def get_correlation_interpretation(r, p_value):
     r_abs = abs(r)
     if r_abs >= 0.9:
         strength = "Very strong"
@@ -216,7 +291,9 @@ def get_correlation_interpretation(r):
         strength = "Very weak"
     
     direction = "positive" if r > 0 else "negative" if r < 0 else "no"
-    return f"{strength} {direction} correlation"
+    sig_text = "significant" if p_value < 0.05 else "not significant"
+    
+    return f"{strength} {direction} correlation ({sig_text} at α=0.05, p={round(p_value, 4)})"
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

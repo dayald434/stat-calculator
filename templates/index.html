@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Statistical Calculator - Cycle 1</title>
+    <title>Statistical Calculator - Iteration 1</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
         <header>
             <h1>📊 Statistical Calculator</h1>
-            <p class="subtitle">geo statistics, hypothesis tests</p>
+            <p class="subtitle">Geo statistics, hypothesis tests, and correlation analysis</p>
         </header>
 
         <div class="tabs">
@@ -48,7 +48,7 @@
 
         <!-- Chi-Square Tab -->
         <div class="tab-content" id="chisquare">
-            <h2>Chi-Square Goodness of Fit</h2>
+            <h2>Chi-Square Goodness of Fit Test</h2>
             <p class="instruction">Enter observed frequencies (line 1) and expected frequencies (line 2):</p>
             <textarea id="chisquare-input" placeholder="Example:&#10;20, 30, 25, 25&#10;25, 25, 25, 25" rows="4"></textarea>
             <button class="btn-calculate" onclick="calculateChiSquare()">Calculate Chi-Square</button>
@@ -57,13 +57,14 @@
 
         <!-- Correlation Tab -->
         <div class="tab-content" id="correlation">
-            <h2>Correlation Analysis</h2>
+            <h2>Correlation Analysis (Pearson)</h2>
             <p class="instruction">Enter X values (line 1) and Y values (line 2):</p>
             <textarea id="correlation-input" placeholder="Example:&#10;1, 2, 3, 4, 5&#10;2, 4, 5, 7, 9" rows="4"></textarea>
             <button class="btn-calculate" onclick="calculateCorrelation()">Calculate Correlation</button>
             <div id="correlation-result" class="result"></div>
         </div>
 
+    </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
