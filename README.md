@@ -70,11 +70,24 @@ Press `Ctrl + C` in the terminal where the server is running.
 ## 📁 Project Structure
 ```
 stat-calculator/
-├── app.py                 # Flask application & API endpoints
+├── app.py                      # Flask application & API endpoints
+├── requirements.txt            # Python dependencies
+├── Procfile                    # Deployment configuration
+├── DS_Project.HTML             # COVID-19 presentation slides
+├── README.md                   # Project documentation
 ├── templates/
-│   └── index.html        #HTML page
+│   └── index.html              # Main HTML page
 ├── static/
-│   ├── style.css         # CSS styling
-│   └── script.js         # JavaScript functionality
-├── tests/                # Unit tests
-└── README.md            # This file
+│   ├── style.css               # CSS styling
+│   └── script.js               # JavaScript functionality
+├── tests/
+│   ├── __init__.py             # Tests package initialization
+│   ├── test_app.py             # Unit tests (47 test cases)
+│   └── README.md               # Testing documentation
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml              # CI pipeline (test, lint, security)
+│   │   ├── deploy.yml          # Deployment pipeline
+│   │   └── code-coverage.yml   # Coverage reporting
+│   └── PIPELINE_GUIDE.md       # GitHub Actions guide
+└── __pycache__/                # Python bytecode cache
