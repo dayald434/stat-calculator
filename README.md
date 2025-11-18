@@ -28,7 +28,24 @@ venv\Scripts\activate
 # You should see (venv) in your terminal
 ```
 
-### Step 3: Verify Installation
+#### macOS/Linux:
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate
+
+# You should see (venv) in your terminal
+```
+
+### Step 3: Install Dependencies
+```bash
+# Install required packages
+pip install -r requirements.txt
+```
+
+### Step 4: Verify Installation
 ```bash
 # Check Flask installation
 python -c "import flask; print('Flask version:', flask.__version__)"
