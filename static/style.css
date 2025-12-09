@@ -118,6 +118,62 @@ textarea:focus {
     border-color: #667eea;
 }
 
+.file-upload-section {
+    margin: 15px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px dashed #d0d0d0;
+}
+
+.file-label {
+    font-weight: 600;
+    color: #667eea;
+    margin-right: 10px;
+}
+
+input[type="file"] {
+    padding: 8px;
+    border: 1px solid #d0d0d0;
+    border-radius: 5px;
+    background: white;
+    cursor: pointer;
+}
+
+.filename {
+    margin-left: 10px;
+    color: #27ae60;
+    font-weight: 500;
+}
+
+.csv-help {
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.csv-help details {
+    cursor: pointer;
+    color: #667eea;
+}
+
+.csv-help summary {
+    font-weight: 600;
+    padding: 8px;
+    background: #f0f4ff;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.csv-help pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 12px;
+    border-radius: 5px;
+    font-size: 12px;
+    overflow-x: auto;
+    margin-top: 8px;
+}
+
 .btn-calculate {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;

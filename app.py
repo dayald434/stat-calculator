@@ -3,6 +3,8 @@ from flask_cors import CORS
 import math
 import statistics
 from scipy import stats
+import csv
+from io import StringIO
 
 app = Flask(__name__)
 CORS(app)
@@ -11,11 +13,45 @@ CORS(app)
 def index():
     return render_template('index.html')
 
+def parse_csv_data(csv_content):
+    """Parse CSV content and return list of numbers"""
+    numbers = []
+    csv_file = StringIO(csv_content)
+    csv_reader = csv.reader(csv_file)
+    
+    for row in csv_reader:
+        for value in row:
+            value = value.strip()
+            if value:  # Skip empty values
+                try:
+                    numbers.append(float(value))
+                except ValueError:
+                    # Skip non-numeric values (headers, etc.)
+                    continue
+    
+    return numbers
+
 @app.route('/api/descriptive-stats', methods=['POST'])
 def descriptive_stats():
     try:
-        data = request.json.get('data', '')
-        numbers = [float(x.strip()) for x in data.split(',') if x.strip()]
+        # Handle both JSON and file uploads
+        if request.is_json:
+            data = request.json.get('data', '')
+            numbers = [float(x.strip()) for x in data.split(',') if x.strip()]
+        else:
+            # Handle CSV file upload
+            if 'file' not in request.files:
+                return jsonify({'error': 'No file uploaded'}), 400
+            
+            file = request.files['file']
+            if file.filename == '':
+                return jsonify({'error': 'No file selected'}), 400
+            
+            if not file.filename.endswith('.csv'):
+                return jsonify({'error': 'Please upload a CSV file'}), 400
+            
+            csv_content = file.read().decode('utf-8')
+            numbers = parse_csv_data(csv_content)
         
         if not numbers:
             return jsonify({'error': 'Please enter valid numbers'}), 400
@@ -67,25 +103,37 @@ def descriptive_stats():
 @app.route('/api/t-test', methods=['POST'])
 def t_test():
     try:
-        data = request.json.get('data', '')
-        
-        # Split by newlines and filter empty lines
-        lines = [line.strip() for line in data.strip().split('\n') if line.strip()]
-        
-        if len(lines) < 2:
-            return jsonify({'error': 'Enter sample data (line 1) and population mean (line 2). Make sure to press Enter between lines.'}), 400
-        
-        # Parse sample data
-        try:
+        # Handle both JSON and file uploads
+        if request.is_json:
+            data = request.json.get('data', '')
+            
+            # Split by newlines and filter empty lines
+            lines = [line.strip() for line in data.strip().split('\n') if line.strip()]
+            
+            if len(lines) < 2:
+                return jsonify({'error': 'Enter sample data (line 1) and population mean (line 2). Make sure to press Enter between lines.'}), 400
+            
+            # Parse sample data
             sample = [float(x.strip()) for x in lines[0].split(',') if x.strip()]
-        except ValueError as e:
-            return jsonify({'error': f'Invalid sample data format: {str(e)}'}), 400
-        
-        # Parse population mean
-        try:
             population_mean = float(lines[1].strip())
-        except ValueError:
-            return jsonify({'error': 'Population mean must be a single number'}), 400
+        else:
+            # Handle CSV file upload
+            if 'file' not in request.files:
+                return jsonify({'error': 'No file uploaded'}), 400
+            
+            file = request.files['file']
+            if file.filename == '' or not file.filename.endswith('.csv'):
+                return jsonify({'error': 'Please upload a CSV file'}), 400
+            
+            csv_content = file.read().decode('utf-8')
+            all_numbers = parse_csv_data(csv_content)
+            
+            if len(all_numbers) < 2:
+                return jsonify({'error': 'CSV must contain sample data and population mean (last value)'}), 400
+            
+            # Last value is population mean, rest is sample
+            sample = all_numbers[:-1]
+            population_mean = all_numbers[-1]
         
         if not sample:
             return jsonify({'error': 'Sample data cannot be empty'}), 400
@@ -128,34 +176,43 @@ def t_test():
 @app.route('/api/chi-square', methods=['POST'])
 def chi_square():
     try:
-        data = request.json.get('data', '')
-        
-        # Debug: Print received data
-        print(f"Received data: {repr(data)}")
-        
-        # Split by newlines and filter empty lines
-        lines = [line.strip() for line in data.strip().split('\n') if line.strip()]
-        
-        print(f"Number of lines: {len(lines)}")
-        print(f"Lines: {lines}")
-        
-        if len(lines) < 2:
-            return jsonify({'error': 'Enter observed (line 1) and expected (line 2) frequencies. Make sure to press Enter between lines.'}), 400
-        
-        # Parse observed frequencies
-        try:
+        # Handle both JSON and file uploads
+        if request.is_json:
+            data = request.json.get('data', '')
+            
+            # Split by newlines and filter empty lines
+            lines = [line.strip() for line in data.strip().split('\n') if line.strip()]
+            
+            if len(lines) < 2:
+                return jsonify({'error': 'Enter observed (line 1) and expected (line 2) frequencies. Make sure to press Enter between lines.'}), 400
+            
+            # Parse observed and expected frequencies
             observed = [float(x.strip()) for x in lines[0].split(',') if x.strip()]
-        except (ValueError, IndexError) as e:
-            return jsonify({'error': f'Invalid observed frequencies format: {str(e)}'}), 400
-        
-        # Parse expected frequencies
-        try:
             expected = [float(x.strip()) for x in lines[1].split(',') if x.strip()]
-        except (ValueError, IndexError) as e:
-            return jsonify({'error': f'Invalid expected frequencies format: {str(e)}'}), 400
-        
-        print(f"Observed: {observed}")
-        print(f"Expected: {expected}")
+        else:
+            # Handle CSV file upload
+            if 'file' not in request.files:
+                return jsonify({'error': 'No file uploaded'}), 400
+            
+            file = request.files['file']
+            if file.filename == '' or not file.filename.endswith('.csv'):
+                return jsonify({'error': 'Please upload a CSV file'}), 400
+            
+            csv_content = file.read().decode('utf-8')
+            csv_file = StringIO(csv_content)
+            csv_reader = csv.reader(csv_file)
+            
+            rows = []
+            for row in csv_reader:
+                values = [float(x.strip()) for x in row if x.strip()]
+                if values:
+                    rows.append(values)
+            
+            if len(rows) < 2:
+                return jsonify({'error': 'CSV must contain 2 rows: observed and expected frequencies'}), 400
+            
+            observed = rows[0]
+            expected = rows[1]
         
         if not observed:
             return jsonify({'error': 'Observed frequencies cannot be empty'}), 400
@@ -214,25 +271,43 @@ def chi_square():
 @app.route('/api/correlation', methods=['POST'])
 def correlation():
     try:
-        data = request.json.get('data', '')
-        
-        # Split by newlines and filter empty lines
-        lines = [line.strip() for line in data.strip().split('\n') if line.strip()]
-        
-        if len(lines) < 2:
-            return jsonify({'error': 'Enter X values (line 1) and Y values (line 2). Make sure to press Enter between lines.'}), 400
-        
-        # Parse X values
-        try:
+        # Handle both JSON and file uploads
+        if request.is_json:
+            data = request.json.get('data', '')
+            
+            # Split by newlines and filter empty lines
+            lines = [line.strip() for line in data.strip().split('\n') if line.strip()]
+            
+            if len(lines) < 2:
+                return jsonify({'error': 'Enter X values (line 1) and Y values (line 2). Make sure to press Enter between lines.'}), 400
+            
+            # Parse X and Y values
             x_values = [float(x.strip()) for x in lines[0].split(',') if x.strip()]
-        except ValueError as e:
-            return jsonify({'error': f'Invalid X values format: {str(e)}'}), 400
-        
-        # Parse Y values
-        try:
             y_values = [float(y.strip()) for y in lines[1].split(',') if y.strip()]
-        except ValueError as e:
-            return jsonify({'error': f'Invalid Y values format: {str(e)}'}), 400
+        else:
+            # Handle CSV file upload
+            if 'file' not in request.files:
+                return jsonify({'error': 'No file uploaded'}), 400
+            
+            file = request.files['file']
+            if file.filename == '' or not file.filename.endswith('.csv'):
+                return jsonify({'error': 'Please upload a CSV file'}), 400
+            
+            csv_content = file.read().decode('utf-8')
+            csv_file = StringIO(csv_content)
+            csv_reader = csv.reader(csv_file)
+            
+            rows = []
+            for row in csv_reader:
+                values = [float(x.strip()) for x in row if x.strip()]
+                if values:
+                    rows.append(values)
+            
+            if len(rows) < 2:
+                return jsonify({'error': 'CSV must contain 2 rows: X values and Y values'}), 400
+            
+            x_values = rows[0]
+            y_values = rows[1]
         
         if not x_values:
             return jsonify({'error': 'X values cannot be empty'}), 400

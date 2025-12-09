@@ -16,6 +16,16 @@ document.querySelectorAll('.tab-button').forEach(button => {
     });
 });
 
+// Handle CSV file upload
+function handleFileUpload(input, tabName) {
+    const filenameSpan = document.getElementById(`${tabName}-filename`);
+    if (input.files.length > 0) {
+        filenameSpan.textContent = `✓ ${input.files[0].name}`;
+    } else {
+        filenameSpan.textContent = '';
+    }
+}
+
 // Helper function to display results
 function displayResult(elementId, data, isError = false) {
     const resultDiv = document.getElementById(elementId);
@@ -32,9 +42,36 @@ function displayResult(elementId, data, isError = false) {
 // Calculate Descriptive Statistics
 async function calculateDescriptive() {
     const input = document.getElementById('descriptive-input').value;
+    const fileInput = document.getElementById('descriptive-file');
     
+    // Check if file is uploaded
+    if (fileInput.files.length > 0) {
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        try {
+            const response = await fetch('/api/descriptive-stats', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                displayResult('descriptive-result', result.error, true);
+                return;
+            }
+            
+            displayDescriptiveResult(result);
+        } catch (error) {
+            displayResult('descriptive-result', `Network error: ${error.message}`, true);
+        }
+        return;
+    }
+    
+    // Otherwise use text input
     if (!input.trim()) {
-        displayResult('descriptive-result', 'Please enter some numbers', true);
+        displayResult('descriptive-result', 'Please enter some numbers or upload a CSV file', true);
         return;
     }
     
@@ -54,61 +91,91 @@ async function calculateDescriptive() {
             return;
         }
         
-        const html = `
-            <h3>📊 Descriptive Statistics Results</h3>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">Count</div>
-                    <div class="stat-value">${result.count}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Sum</div>
-                    <div class="stat-value">${result.sum}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Mean</div>
-                    <div class="stat-value">${result.mean}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Median</div>
-                    <div class="stat-value">${result.median}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Mode</div>
-                    <div class="stat-value">${result.mode}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Variance</div>
-                    <div class="stat-value">${result.variance}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Std Deviation</div>
-                    <div class="stat-value">${result.stdDev}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Minimum</div>
-                    <div class="stat-value">${result.min}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Maximum</div>
-                    <div class="stat-value">${result.max}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Range</div>
-                    <div class="stat-value">${result.range}</div>
-                </div>
-            </div>
-        `;
-        
-        displayResult('descriptive-result', html);
+        displayDescriptiveResult(result);
     } catch (error) {
         displayResult('descriptive-result', 'Failed to connect to server', true);
     }
 }
 
+function displayDescriptiveResult(result) {
+    const html = `
+        <h3>📊 Descriptive Statistics Results</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Count</div>
+                <div class="stat-value">${result.count}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Sum</div>
+                <div class="stat-value">${result.sum}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Mean</div>
+                <div class="stat-value">${result.mean}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Median</div>
+                <div class="stat-value">${result.median}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Mode</div>
+                <div class="stat-value">${result.mode}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Variance</div>
+                <div class="stat-value">${result.variance}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Std Deviation</div>
+                <div class="stat-value">${result.stdDev}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Minimum</div>
+                <div class="stat-value">${result.min}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Maximum</div>
+                <div class="stat-value">${result.max}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Range</div>
+                <div class="stat-value">${result.range}</div>
+            </div>
+        </div>
+    `;
+    
+    displayResult('descriptive-result', html);
+}
+
 // Calculate T-Test
 async function calculateTTest() {
     const input = document.getElementById('ttest-input').value;
+    const fileInput = document.getElementById('ttest-file');
+    
+    // Check if file is uploaded
+    if (fileInput.files.length > 0) {
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        try {
+            const response = await fetch('/api/t-test', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                displayResult('ttest-result', result.error, true);
+                return;
+            }
+            
+            displayTTestResult(result);
+        } catch (error) {
+            displayResult('ttest-result', `Network error: ${error.message}`, true);
+        }
+        return;
+    }
     
     if (!input.trim()) {
         displayResult('ttest-result', 'Please enter sample data and population mean', true);
@@ -131,63 +198,93 @@ async function calculateTTest() {
             return;
         }
         
-        const html = `
-            <h3>🔬 One-Sample T-Test Results</h3>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">Sample Size</div>
-                    <div class="stat-value">${result.sampleSize}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Sample Mean</div>
-                    <div class="stat-value">${result.sampleMean}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Population Mean</div>
-                    <div class="stat-value">${result.populationMean}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Sample Std Dev</div>
-                    <div class="stat-value">${result.sampleStdDev}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Standard Error</div>
-                    <div class="stat-value">${result.standardError}</div>
-                </div>
-                <div class="stat-card highlight">
-                    <div class="stat-label">T-Statistic</div>
-                    <div class="stat-value">${result.tStatistic}</div>
-                </div>
-                <div class="stat-card highlight">
-                    <div class="stat-label">P-Value</div>
-                    <div class="stat-value">${result.pValue}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Degrees of Freedom</div>
-                    <div class="stat-value">${result.degreesOfFreedom}</div>
-                </div>
-                <div class="stat-card ${result.significance === 'Significant' ? 'significant' : 'not-significant'}">
-                    <div class="stat-label">Result</div>
-                    <div class="stat-value">${result.significance}</div>
-                </div>
-            </div>
-            <div class="note">
-                <strong>📝 Interpretation:</strong> ${result.interpretation}
-            </div>
-        `;
-        
-        displayResult('ttest-result', html);
+        displayTTestResult(result);
     } catch (error) {
         displayResult('ttest-result', 'Failed to connect to server', true);
     }
 }
 
+function displayTTestResult(result) {
+    const html = `
+        <h3>🔬 One-Sample T-Test Results</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Sample Size</div>
+                <div class="stat-value">${result.sampleSize}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Sample Mean</div>
+                <div class="stat-value">${result.sampleMean}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Population Mean</div>
+                <div class="stat-value">${result.populationMean}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Sample Std Dev</div>
+                <div class="stat-value">${result.sampleStdDev}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Standard Error</div>
+                <div class="stat-value">${result.standardError}</div>
+            </div>
+            <div class="stat-card highlight">
+                <div class="stat-label">T-Statistic</div>
+                <div class="stat-value">${result.tStatistic}</div>
+            </div>
+            <div class="stat-card highlight">
+                <div class="stat-label">P-Value</div>
+                <div class="stat-value">${result.pValue}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Degrees of Freedom</div>
+                <div class="stat-value">${result.degreesOfFreedom}</div>
+            </div>
+            <div class="stat-card ${result.significance === 'Significant' ? 'significant' : 'not-significant'}">
+                <div class="stat-label">Result</div>
+                <div class="stat-value">${result.significance}</div>
+            </div>
+        </div>
+        <div class="note">
+            <strong>📝 Interpretation:</strong> ${result.interpretation}
+        </div>
+    `;
+    
+    displayResult('ttest-result', html);
+}
+
 // Calculate Chi-Square
 async function calculateChiSquare() {
     const input = document.getElementById('chisquare-input').value;
+    const fileInput = document.getElementById('chisquare-file');
+    
+    // Check if file is uploaded
+    if (fileInput.files.length > 0) {
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        try {
+            const response = await fetch('/api/chi-square', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                displayResult('chisquare-result', result.error, true);
+                return;
+            }
+            
+            displayChiSquareResult(result);
+        } catch (error) {
+            displayResult('chisquare-result', `Network error: ${error.message}`, true);
+        }
+        return;
+    }
     
     if (!input.trim()) {
-        displayResult('chisquare-result', 'Please enter observed and expected frequencies', true);
+        displayResult('chisquare-result', 'Please enter observed and expected frequencies or upload CSV', true);
         return;
     }
     
@@ -206,6 +303,14 @@ async function calculateChiSquare() {
             displayResult('chisquare-result', result.error, true);
             return;
         }
+        
+        displayChiSquareResult(result);
+    } catch (error) {
+        displayResult('chisquare-result', 'Failed to connect to server', true);
+    }
+}
+
+function displayChiSquareResult(result) {
         
         const html = `
             <h3>📊 Chi-Square Test Results</h3>
@@ -245,17 +350,40 @@ async function calculateChiSquare() {
         `;
         
         displayResult('chisquare-result', html);
-    } catch (error) {
-        displayResult('chisquare-result', 'Failed to connect to server', true);
-    }
 }
 
 // Calculate Correlation
 async function calculateCorrelation() {
     const input = document.getElementById('correlation-input').value;
+    const fileInput = document.getElementById('correlation-file');
+    
+    // Check if file is uploaded
+    if (fileInput.files.length > 0) {
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        try {
+            const response = await fetch('/api/correlation', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                displayResult('correlation-result', result.error, true);
+                return;
+            }
+            
+            displayCorrelationResult(result);
+        } catch (error) {
+            displayResult('correlation-result', `Network error: ${error.message}`, true);
+        }
+        return;
+    }
     
     if (!input.trim()) {
-        displayResult('correlation-result', 'Please enter X and Y values', true);
+        displayResult('correlation-result', 'Please enter X and Y values or upload CSV', true);
         return;
     }
     
@@ -274,6 +402,14 @@ async function calculateCorrelation() {
             displayResult('correlation-result', result.error, true);
             return;
         }
+        
+        displayCorrelationResult(result);
+    } catch (error) {
+        displayResult('correlation-result', 'Failed to connect to server', true);
+    }
+}
+
+function displayCorrelationResult(result) {
         
         const html = `
             <h3>📉 Correlation Analysis Results</h3>
@@ -313,9 +449,6 @@ async function calculateCorrelation() {
         `;
         
         displayResult('correlation-result', html);
-    } catch (error) {
-        displayResult('correlation-result', 'Failed to connect to server', true);
-    }
 }
 
 // Add Enter key support for textareas
