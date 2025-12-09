@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Statistical Calculator - Iteration 1</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -54,6 +55,19 @@ or
                 </details>
             </div>
             <div id="descriptive-result" class="result"></div>
+            <div id="descriptive-chart-container" class="chart-container" style="display: none;">
+                <canvas id="descriptive-chart"></canvas>
+                <div class="chart-explanation">
+                    <h4>📖 Understanding the Chart</h4>
+                    <p><strong>Frequency Distribution Histogram:</strong> Each bar shows how many values fall within a range. Taller bars = more values in that range.</p>
+                    <ul>
+                        <li><strong>Shape:</strong> Look for patterns - bell-shaped (normal), skewed (one-sided), or multimodal (multiple peaks)</li>
+                        <li><strong>Mean vs Median:</strong> If similar, data is symmetric. If different, data is skewed</li>
+                        <li><strong>Spread:</strong> Wide distribution = high variability; narrow = low variability</li>
+                        <li><strong>Outliers:</strong> Isolated bars far from the cluster may indicate outliers</li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
         <!-- T-Test Tab -->
@@ -75,6 +89,19 @@ or
                 </details>
             </div>
             <div id="ttest-result" class="result"></div>
+            <div id="ttest-chart-container" class="chart-container" style="display: none;">
+                <canvas id="ttest-chart"></canvas>
+                <div class="chart-explanation">
+                    <h4>📖 Understanding the Chart</h4>
+                    <p><strong>Sample Distribution vs Population Mean:</strong> Blue bars show where your sample values cluster. The red dashed line is the population mean (hypothesized value).</p>
+                    <ul>
+                        <li><strong>Line overlaps bars:</strong> Sample mean ≈ population mean → NOT significant (fail to reject null hypothesis)</li>
+                        <li><strong>Line far from bars:</strong> Sample mean ≠ population mean → SIGNIFICANT (reject null hypothesis)</li>
+                        <li><strong>p-value < 0.05:</strong> Strong evidence the sample differs from population mean</li>
+                        <li><strong>Spread of bars:</strong> Shows variability in your sample data</li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
         <!-- Chi-Square Tab -->
@@ -97,6 +124,19 @@ or
                 </details>
             </div>
             <div id="chisquare-result" class="result"></div>
+            <div id="chisquare-chart-container" class="chart-container" style="display: none;">
+                <canvas id="chisquare-chart"></canvas>
+                <div class="chart-explanation">
+                    <h4>📖 Understanding the Chart</h4>
+                    <p><strong>Grouped Bar Chart - Observed vs Expected:</strong> Blue bars = actual counts observed; Red bars = counts you would expect if categories were equal/independent.</p>
+                    <ul>
+                        <li><strong>Bars overlap:</strong> Observed ≈ Expected → NOT significant (no association)</li>
+                        <li><strong>Large gaps:</strong> Observed ≠ Expected → SIGNIFICANT (strong association or deviation)</li>
+                        <li><strong>p-value < 0.05:</strong> Data significantly differs from what you'd expect by chance</li>
+                        <li><strong>Chi-square statistic:</strong> Larger value = bigger difference = more significant</li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
         <!-- Correlation Tab -->
@@ -119,6 +159,21 @@ or
                 </details>
             </div>
             <div id="correlation-result" class="result"></div>
+            <div id="correlation-chart-container" class="chart-container" style="display: none;">
+                <canvas id="correlation-chart"></canvas>
+                <div class="chart-explanation">
+                    <h4>📖 Understanding the Chart</h4>
+                    <p><strong>Scatter Plot with Regression Line:</strong> Each blue dot = one data point. Red dashed line = best-fit line showing the relationship trend.</p>
+                    <ul>
+                        <li><strong>Points cluster tight around line:</strong> Strong correlation (r near ±1)</li>
+                        <li><strong>Points spread far from line:</strong> Weak correlation (r near 0)</li>
+                        <li><strong>Line slopes up:</strong> Positive correlation (as X increases, Y increases)</li>
+                        <li><strong>Line slopes down:</strong> Negative correlation (as X increases, Y decreases)</li>
+                        <li><strong>R² value:</strong> % of Y variation explained by X (higher = better fit)</li>
+                        <li><strong>p-value < 0.05:</strong> Correlation is statistically significant</li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
     </div>

@@ -499,6 +499,128 @@ class TestStatCalculatorApp(unittest.TestCase):
         data = json.loads(response.data)
         self.assertEqual(data['mean'], 2000000)
 
+    # ===== Test Chart Data Fields =====
+    def test_descriptive_stats_includes_raw_data(self):
+        """Test that descriptive stats includes rawData for charting"""
+        response = self.client.post('/api/descriptive-stats',
+                                   json={'data': '1, 2, 3, 4, 5'},
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        
+        # Check that rawData field exists and contains the input numbers
+        self.assertIn('rawData', data)
+        self.assertEqual(data['rawData'], [1, 2, 3, 4, 5])
+
+    def test_ttest_includes_sample_data(self):
+        """Test that t-test includes sampleData and popMean for charting"""
+        response = self.client.post('/api/t-test',
+                                   json={'data': '10, 12, 14, 16, 18\n15'},
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        
+        # Check that chart data fields exist
+        self.assertIn('sampleData', data)
+        self.assertIn('popMean', data)
+        self.assertEqual(data['sampleData'], [10, 12, 14, 16, 18])
+        self.assertEqual(data['popMean'], 15)
+
+    def test_chisquare_includes_observed_expected(self):
+        """Test that chi-square includes observed and expected for charting"""
+        response = self.client.post('/api/chi-square',
+                                   json={'data': '25, 30, 45\n33.3, 33.3, 33.3'},
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        
+        # Check that chart data fields exist
+        self.assertIn('observed', data)
+        self.assertIn('expected', data)
+        self.assertEqual(len(data['observed']), 3)
+        self.assertEqual(len(data['expected']), 3)
+
+    def test_correlation_includes_xy_values(self):
+        """Test that correlation includes xValues and yValues for charting"""
+        response = self.client.post('/api/correlation',
+                                   json={'data': '1, 2, 3, 4, 5\n2, 4, 6, 8, 10'},
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        
+        # Check that chart data fields exist
+        self.assertIn('xValues', data)
+        self.assertIn('yValues', data)
+        self.assertEqual(data['xValues'], [1, 2, 3, 4, 5])
+        self.assertEqual(data['yValues'], [2, 4, 6, 8, 10])
+
+    # ===== Test CSV File Upload =====
+    def test_descriptive_stats_csv_upload(self):
+        """Test descriptive stats with CSV file upload"""
+        csv_content = b'12,15,18,20,22,25,28'
+        response = self.client.post('/api/descriptive-stats',
+                                   data={'file': (self.create_csv_file(csv_content), 'test.csv')},
+                                   content_type='multipart/form-data')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        
+        self.assertEqual(data['count'], 7)
+        self.assertIn('rawData', data)
+
+    def test_ttest_csv_upload(self):
+        """Test t-test with CSV file upload"""
+        csv_content = b'10,12,14,16,18,15'
+        response = self.client.post('/api/t-test',
+                                   data={'file': (self.create_csv_file(csv_content), 'test.csv')},
+                                   content_type='multipart/form-data')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        
+        self.assertIn('sampleData', data)
+        self.assertIn('popMean', data)
+
+    def test_chisquare_csv_upload(self):
+        """Test chi-square with CSV file upload (2 rows)"""
+        csv_content = b'25,30,45\n33.3,33.3,33.3'
+        response = self.client.post('/api/chi-square',
+                                   data={'file': (self.create_csv_file(csv_content), 'test.csv')},
+                                   content_type='multipart/form-data')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        
+        self.assertIn('observed', data)
+        self.assertIn('expected', data)
+
+    def test_correlation_csv_upload(self):
+        """Test correlation with CSV file upload (2 rows)"""
+        csv_content = b'1,2,3,4,5\n2,4,6,8,10'
+        response = self.client.post('/api/correlation',
+                                   data={'file': (self.create_csv_file(csv_content), 'test.csv')},
+                                   content_type='multipart/form-data')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        
+        self.assertIn('xValues', data)
+        self.assertIn('yValues', data)
+
+    def test_descriptive_csv_with_newlines(self):
+        """Test descriptive stats CSV with values on separate lines"""
+        csv_content = b'12\n15\n18\n20\n22'
+        response = self.client.post('/api/descriptive-stats',
+                                   data={'file': (self.create_csv_file(csv_content), 'test.csv')},
+                                   content_type='multipart/form-data')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        
+        self.assertEqual(data['count'], 5)
+        self.assertEqual(data['rawData'], [12, 15, 18, 20, 22])
+
+    # ===== Helper Methods =====
+    def create_csv_file(self, content):
+        """Helper method to create a CSV file-like object"""
+        from io import BytesIO
+        return BytesIO(content)
+
 
 if __name__ == '__main__':
     # Run tests with verbose output

@@ -90,7 +90,8 @@ def descriptive_stats():
             'stdDev': round(std_dev, 4),
             'min': round(minimum, 4),
             'max': round(maximum, 4),
-            'range': round(data_range, 4)
+            'range': round(data_range, 4),
+            'rawData': numbers  # Include raw data for charting
         }
         
         return jsonify(result)
@@ -163,7 +164,9 @@ def t_test():
             'pValue': round(p_value, 6),
             'degreesOfFreedom': df,
             'significance': significance,
-            'interpretation': f'At α=0.05: {significance} (p={round(p_value, 4)})'
+            'interpretation': f'At α=0.05: {significance} (p={round(p_value, 4)})',
+            'sampleData': sample,  # Include for charting
+            'popMean': population_mean  # Include for charting
         }
         
         return jsonify(result)
@@ -256,7 +259,9 @@ def chi_square():
             'significance': significance,
             'observedSum': round(sum_obs, 2),
             'expectedSum': round(sum(expected), 2),
-            'interpretation': f'At α=0.05: {significance} (p={round(p_value, 4)})'
+            'interpretation': f'At α=0.05: {significance} (p={round(p_value, 4)})',
+            'observed': observed,  # Include for charting
+            'expected': expected   # Include for charting
         }
         
         return jsonify(result)
@@ -342,7 +347,9 @@ def correlation():
             'meanX': round(mean_x, 4),
             'meanY': round(mean_y, 4),
             'significance': significance,
-            'interpretation': get_correlation_interpretation(correlation_coef, p_value)
+            'interpretation': get_correlation_interpretation(correlation_coef, p_value),
+            'xValues': x_values,  # Include for charting
+            'yValues': y_values   # Include for charting
         }
         
         return jsonify(result)

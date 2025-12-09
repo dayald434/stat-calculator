@@ -145,6 +145,11 @@ function displayDescriptiveResult(result) {
     `;
     
     displayResult('descriptive-result', html);
+    
+    // Create chart if raw data is available
+    if (result.rawData) {
+        createDescriptiveChart(result, result.rawData);
+    }
 }
 
 // Calculate T-Test
@@ -251,6 +256,11 @@ function displayTTestResult(result) {
     `;
     
     displayResult('ttest-result', html);
+    
+    // Create chart if sample data is available
+    if (result.sampleData && result.popMean !== undefined) {
+        createTTestChart(result, result.sampleData, result.popMean);
+    }
 }
 
 // Calculate Chi-Square
@@ -350,6 +360,11 @@ function displayChiSquareResult(result) {
         `;
         
         displayResult('chisquare-result', html);
+        
+        // Create chart if observed and expected data are available
+        if (result.observed && result.expected) {
+            createChiSquareChart(result, result.observed, result.expected);
+        }
 }
 
 // Calculate Correlation
@@ -449,6 +464,11 @@ function displayCorrelationResult(result) {
         `;
         
         displayResult('correlation-result', html);
+        
+        // Create chart if X and Y values are available
+        if (result.xValues && result.yValues) {
+            createCorrelationChart(result, result.xValues, result.yValues);
+        }
 }
 
 // Add Enter key support for textareas
@@ -484,5 +504,328 @@ document.querySelectorAll('.btn-calculate').forEach(button => {
         }, 100);
     });
 });
+
+// Chart instances to keep track of created charts
+let charts = {
+    descriptive: null,
+    ttest: null,
+    chisquare: null,
+    correlation: null
+};
+
+// Create histogram for descriptive statistics with frequency distribution
+function createDescriptiveChart(data, numbers) {
+    const container = document.getElementById('descriptive-chart-container');
+    const ctx = document.getElementById('descriptive-chart');
+    
+    // Destroy existing chart if it exists
+    if (charts.descriptive) {
+        charts.descriptive.destroy();
+    }
+    
+    // Show container
+    container.style.display = 'block';
+    
+    // Create bins for histogram (frequency distribution)
+    const min = Math.floor(data.min);
+    const max = Math.ceil(data.max);
+    const binCount = Math.min(10, Math.max(5, Math.ceil(Math.sqrt(numbers.length))));
+    const binWidth = (max - min) / binCount || 1;
+    
+    // Create bins
+    const bins = new Array(binCount).fill(0);
+    const binLabels = [];
+    
+    for (let i = 0; i < binCount; i++) {
+        const binStart = min + (i * binWidth);
+        const binEnd = binStart + binWidth;
+        binLabels.push(`${binStart.toFixed(1)}-${binEnd.toFixed(1)}`);
+    }
+    
+    // Count frequencies
+    numbers.forEach(num => {
+        const binIndex = Math.floor((num - min) / binWidth);
+        if (binIndex >= 0 && binIndex < binCount) {
+            bins[binIndex]++;
+        }
+    });
+    
+    // Create histogram
+    charts.descriptive = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: binLabels,
+            datasets: [{
+                label: 'Frequency',
+                data: bins,
+                backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                borderColor: 'rgba(102, 126, 234, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `Frequency Distribution (Mean=${data.mean}, Median=${data.median}, StdDev=${data.stdDev})`,
+                    font: { size: 14, weight: 'bold' }
+                },
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    },
+                    title: {
+                        display: true,
+                        text: 'Frequency (Count)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Value Range'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Create comparison chart for T-Test - shows sample distribution vs population mean
+function createTTestChart(result, sampleData, popMean) {
+    const container = document.getElementById('ttest-chart-container');
+    const ctx = document.getElementById('ttest-chart');
+    
+    if (charts.ttest) {
+        charts.ttest.destroy();
+    }
+    
+    container.style.display = 'block';
+    
+    // Create bins for sample data distribution
+    const min = Math.min(...sampleData);
+    const max = Math.max(...sampleData);
+    const binCount = Math.max(3, Math.ceil(Math.sqrt(sampleData.length)));
+    const binWidth = (max - min) / binCount || 1;
+    
+    const bins = new Array(binCount).fill(0);
+    const binLabels = [];
+    
+    for (let i = 0; i < binCount; i++) {
+        const binStart = min + (i * binWidth);
+        const binEnd = binStart + binWidth;
+        binLabels.push(`${binStart.toFixed(1)}-${binEnd.toFixed(1)}`);
+    }
+    
+    sampleData.forEach(num => {
+        const binIndex = Math.floor((num - min) / binWidth);
+        if (binIndex >= 0 && binIndex < binCount) {
+            bins[binIndex]++;
+        }
+    });
+    
+    // Create chart with sample distribution and population mean line
+    charts.ttest = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: binLabels,
+            datasets: [{
+                label: 'Sample Distribution',
+                data: bins,
+                backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                borderColor: 'rgba(102, 126, 234, 1)',
+                borderWidth: 2
+            }, {
+                label: 'Population Mean',
+                data: new Array(binCount).fill(popMean),
+                type: 'line',
+                borderColor: 'rgba(231, 76, 60, 1)',
+                borderWidth: 3,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `One-Sample T-Test: ${result.significance} ${result.significance === 'Significant' ? '✓' : '✗'} (t=${result.tStatistic}, p=${result.pValue})`,
+                    font: { size: 14, weight: 'bold' },
+                    color: result.significance === 'Significant' ? 'rgba(231, 76, 60, 1)' : 'rgba(46, 204, 113, 1)'
+                },
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    },
+                    title: {
+                        display: true,
+                        text: 'Frequency'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Value Range'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Create bar chart for Chi-Square
+function createChiSquareChart(result, observed, expected) {
+    const container = document.getElementById('chisquare-chart-container');
+    const ctx = document.getElementById('chisquare-chart');
+    
+    if (charts.chisquare) {
+        charts.chisquare.destroy();
+    }
+    
+    container.style.display = 'block';
+    
+    const categories = observed.map((_, i) => `Category ${i + 1}`);
+    
+    charts.chisquare = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: categories,
+            datasets: [{
+                label: 'Observed',
+                data: observed,
+                backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                borderColor: 'rgba(102, 126, 234, 1)',
+                borderWidth: 2
+            }, {
+                label: 'Expected',
+                data: expected,
+                backgroundColor: 'rgba(231, 76, 60, 0.6)',
+                borderColor: 'rgba(231, 76, 60, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `Chi-Square Test: ${result.significance} ${result.significance === 'Significant' ? '✓' : '✗'} (χ²=${result.chiSquareStatistic}, p=${result.pValue})`,
+                    font: { size: 14, weight: 'bold' },
+                    color: result.significance === 'Significant' ? 'rgba(231, 76, 60, 1)' : 'rgba(46, 204, 113, 1)'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Frequency'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Create scatter plot for Correlation
+function createCorrelationChart(result, xValues, yValues) {
+    const container = document.getElementById('correlation-chart-container');
+    const ctx = document.getElementById('correlation-chart');
+    
+    if (charts.correlation) {
+        charts.correlation.destroy();
+    }
+    
+    container.style.display = 'block';
+    
+    // Create scatter data
+    const scatterData = xValues.map((x, i) => ({ x: x, y: yValues[i] }));
+    
+    // Calculate regression line
+    const n = xValues.length;
+    const sumX = xValues.reduce((a, b) => a + b, 0);
+    const sumY = yValues.reduce((a, b) => a + b, 0);
+    const sumXY = xValues.reduce((sum, x, i) => sum + x * yValues[i], 0);
+    const sumXX = xValues.reduce((sum, x) => sum + x * x, 0);
+    
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+    
+    const minX = Math.min(...xValues);
+    const maxX = Math.max(...xValues);
+    const regressionLine = [
+        { x: minX, y: slope * minX + intercept },
+        { x: maxX, y: slope * maxX + intercept }
+    ];
+    
+    charts.correlation = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Data Points',
+                data: scatterData,
+                backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                borderColor: 'rgba(102, 126, 234, 1)',
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }, {
+                label: 'Regression Line',
+                data: regressionLine,
+                type: 'line',
+                borderColor: 'rgba(231, 76, 60, 1)',
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `Pearson Correlation: ${result.significance} ${result.significance === 'Significant' ? '✓' : '✗'} (r=${result.correlationCoefficient}, p=${result.pValue}, R²=${result.rSquared})`,
+                    font: { size: 14, weight: 'bold' },
+                    color: result.significance === 'Significant' ? 'rgba(231, 76, 60, 1)' : 'rgba(46, 204, 113, 1)'
+                },
+                legend: {
+                    display: true
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    title: {
+                        display: true,
+                        text: 'X Values'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Y Values'
+                    }
+                }
+            }
+        }
+    });
+}
 
 console.log('📊 Statistical Calculator loaded successfully!');

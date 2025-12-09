@@ -197,6 +197,18 @@ input[type="file"] {
     transform: translateY(0);
 }
 
+.chart-container {
+    margin-top: 30px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.chart-container canvas {
+    max-height: 400px;
+}
+
 .result {
     margin-top: 30px;
     padding: 25px;
@@ -336,6 +348,41 @@ footer {
     .stats-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Chart Explanation Styling */
+.chart-explanation {
+    background: #f8f9fa;
+    border-left: 5px solid #667eea;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 8px;
+}
+
+.chart-explanation h4 {
+    color: #667eea;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.chart-explanation p {
+    color: #333;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.chart-explanation ul {
+    margin-left: 20px;
+    color: #555;
+}
+
+.chart-explanation li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+.chart-explanation strong {
+    color: #667eea;
 }
 
 /* Loading animation */
