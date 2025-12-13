@@ -9,7 +9,7 @@ A full-stack web application for performing statistical Geo statistics calculati
 ### Step 1: Clone the Repository
 ```bash
 # Clone the project
-git clone https://github.com/dayald434/Statistical_Calculator.git
+git clone https://github.com/dayald434/stat-calculator.git
 
 # Navigate into the project folder
 cd stat-calculator
